@@ -37,6 +37,7 @@ const descriptions = [
   [0, 1],
 ]
 function onClick(block: BlockState) {
+  block.revealed = true
 }
 function updataNumbers() {
   state.value.board.forEach((row, y: number) => {
@@ -60,6 +61,27 @@ function generateMines() {
       block.mine = Math.random() < 0.2
   }
 }
+const numberColors = [
+  'text-transparent',
+  'text-blue-500',
+  'text-green-500',
+  'text-yellow-500',
+  'text-orange-500',
+  'text-red-500',
+  'text-purple-500',
+  'text-pink-500',
+  'text-teal-500',
+]
+function getBlockClass(block: BlockState) {
+  if (block.flagged)
+    return 'bg-gray-500/10'
+  if (!block.revealed)
+    return 'bg-gray-500/10 hover:bg-gray-500/20'
+
+  return block.mine
+    ? 'bg-red-500/50'
+    : numberColors[block.adjacentMines]
+}
 generateMines()
 updataNumbers()
 </script>
@@ -67,14 +89,21 @@ updataNumbers()
 <template>
   <div items-center>
     <div v-for="y, idx in state.board" :key="idx" flex justify-center>
-      <button v-for="x, xidx in y" :key="xidx" b p-2 w-10 h-10 m-1 hover: @click="onClick(x)">
-        <div v-if="x.mine">
-          {{ 'x' }}
-        </div>
-        <div v-else>
-          {{ x.adjacentMines }}
-        </div>
-      </button>
+      <template v-for="block, xidx in y" :key="xidx">
+        <button border="1 gray-400/20" hover="bg-gray/20" p-2 w-10 h-10 m-1 :class="getBlockClass(block)" @click="onClick(block)">
+          <div v-if="block.mine" i-mdi-mine>
+            {{ 'x' }}
+          </div>
+          <div v-else>
+            <div v-if="block.revealed">
+              {{ block.adjacentMines }}
+            </div>
+            <div v-else>
+              -
+            </div>
+          </div>
+        </button>
+      </template>
     </div>
   </div>
 </template>
