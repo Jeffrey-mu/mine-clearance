@@ -1,14 +1,7 @@
 <script setup lang="ts">
+import type { BlockState } from '~/types'
 const { t } = useI18n()
 const state = ref()
-interface BlockState {
-  x: number
-  y: number
-  revealed: boolean
-  mine?: boolean
-  flagged?: boolean
-  adjacentMines: number
-}
 const width = 10
 const height = 10
 state.value = {
@@ -36,30 +29,56 @@ const descriptions = [
   [-1, 1],
   [0, 1],
 ]
+let mineGenerated: Boolean = false
+const dev: Boolean = true
+function onReightClick(block: BlockState): void {
+  if (!block.revealed)
+    block.flagged = !block.flagged
+}
+watch(state, checkGameState, { deep: true })
 function onClick(block: BlockState) {
+  if (!mineGenerated) {
+    generateMines(block)
+    mineGenerated = true
+  }
+  if (block.mine) {
+    alert('over!')
+    return
+  }
   block.revealed = true
+
+  expendZero(block)
 }
 function updataNumbers() {
   state.value.board.forEach((row, y: number) => {
     row.forEach((block: BlockState, x: number) => {
       if (block.mine)
         return
-      descriptions.forEach(([dx, dy]) => {
-        const x2: number = x + dx
-        const y2: number = y + dy
-        if (x2 < 0 || x2 >= width || y2 < 0 || y2 >= height)
-          return
-        if (state.value.board[y2][x2].mine)
+      getSiblings(block).forEach((el) => {
+        if (el.mine)
           block.adjacentMines += 1
       })
     })
   })
 }
-function generateMines() {
+function getSiblings(block: BlockState) {
+  return descriptions.map(([dx, dy]) => {
+    const x2: number = block.x + dx
+    const y2: number = block.y + dy
+    if (x2 < 0 || x2 >= width || y2 < 0 || y2 >= height)
+      return undefined
+    return state.value.board[y2][x2]
+  }).filter(Boolean) as BlockState[]
+}
+function generateMines(row: BlockState) {
   for (const row of state.value.board) {
-    for (const block of row)
+    for (const block of row) {
+      if (Math.abs(row.x - block.x) < 1 || Math.abs(row.y - block.y) < 1)
+        continue
       block.mine = Math.random() < 0.2
+    }
   }
+  updataNumbers()
 }
 const numberColors = [
   'text-transparent',
@@ -82,26 +101,53 @@ function getBlockClass(block: BlockState) {
     ? 'bg-red-500/50'
     : numberColors[block.adjacentMines]
 }
-generateMines()
-updataNumbers()
+
+function expendZero(block: BlockState) {
+  if (block.adjacentMines)
+    return
+
+  getSiblings(block).forEach((el) => {
+    if (!el.revealed) {
+      el.revealed = true
+      expendZero(el)
+    }
+  })
+}
+function checkGameState() {
+  if (!mineGenerated)
+    return
+  console.log(123)
+
+  const blocks = state.value.board.flat()
+  if (blocks.every(el => el.revealed || el.flagged)) {
+    if (blocks.some(el => el.flagged && !el.mine))
+      alert('You cheat')
+    else
+      alert('You win!')
+  }
+}
 </script>
 
 <template>
+  <h2>Mine-clearance</h2>
   <div items-center>
     <div v-for="y, idx in state.board" :key="idx" flex justify-center>
       <template v-for="block, xidx in y" :key="xidx">
-        <button border="1 gray-400/20" hover="bg-gray/20" p-2 w-10 h-10 m-1 :class="getBlockClass(block)" @click="onClick(block)">
-          <div v-if="block.mine" i-mdi-mine>
-            {{ 'x' }}
-          </div>
-          <div v-else>
-            <div v-if="block.revealed">
-              {{ block.adjacentMines }}
+        <button border="1 gray-400/20" hover="bg-gray/20" p-2 w-10 h-10 m-1 :class="getBlockClass(block)" @click="onClick(block)" @contextmenu.prevent="onReightClick(block)">
+          <template v-if="block.flagged">
+            <div i-mdi-flag text-red />
+          </template>
+          <template v-else>
+            <div v-if="block.mine" i-mdi-mine>
+              {{ 'x' }}
             </div>
             <div v-else>
-              -
+              <div v-if="block.revealed">
+                {{ block.adjacentMines }}
+              </div>
+              <div v-else />
             </div>
-          </div>
+          </template>
         </button>
       </template>
     </div>
