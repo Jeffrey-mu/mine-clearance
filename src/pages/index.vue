@@ -138,7 +138,7 @@ function checkGameState() {
             <div i-mdi-flag text-red />
           </template>
           <template v-else>
-            <div v-if="block.mine" i-mdi-mine>
+            <div v-if="block.mine && block.revealed" i-mdi-mine>
               {{ 'x' }}
             </div>
             <div v-else>
