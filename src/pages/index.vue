@@ -2,23 +2,38 @@
 import type { BlockState } from '~/types'
 const { t } = useI18n()
 const state = ref()
-const width = 10
-const height = 10
-state.value = {
-  mineGenerated: false,
-  status: 'ready',
-  board: Array.from({ length: height }, (_, y) =>
-    Array.from({ length: width },
-      (_, x): BlockState => ({
-        x,
-        y,
-        adjacentMines: 0,
-        revealed: false,
-        mine: false,
-      }),
+const width = ref(10)
+const height = ref(10)
+function rest(type?: string) {
+  state.value = {
+    mineGenerated: false,
+    status: 'ready',
+    board: Array.from({ length: height.value }, (_, y) =>
+      Array.from({ length: width.value },
+        (_, x): BlockState => ({
+          x,
+          y,
+          adjacentMines: 0,
+          revealed: false,
+          mine: false,
+        }),
+      ),
     ),
-  ),
+  }
+  if (type === 'e') {
+    width.value = 6
+    height.value = 6
+  }
+  else if (type === 'n') {
+    width.value = 10
+    height.value = 10
+  }
+  else if (type === 'tn') {
+    width.value = 15
+    height.value = 15
+  }
 }
+rest()
 const descriptions = [
   [1, 1],
   [1, 0],
@@ -30,7 +45,7 @@ const descriptions = [
   [0, 1],
 ]
 let mineGenerated: Boolean = false
-const dev: Boolean = true
+const dev: Boolean = ref(false)
 function onReightClick(block: BlockState): void {
   if (!block.revealed)
     block.flagged = !block.flagged
@@ -43,6 +58,8 @@ function onClick(block: BlockState) {
   }
   if (block.mine) {
     alert('over!')
+    const blocks: BlockState[] = state.value.board.flat()
+    blocks.map(el => el.mine ? el.revealed = true : '')
     return
   }
   block.revealed = true
@@ -65,12 +82,12 @@ function getSiblings(block: BlockState) {
   return descriptions.map(([dx, dy]) => {
     const x2: number = block.x + dx
     const y2: number = block.y + dy
-    if (x2 < 0 || x2 >= width || y2 < 0 || y2 >= height)
+    if (x2 < 0 || x2 >= width.value || y2 < 0 || y2 >= height.value)
       return undefined
     return state.value.board[y2][x2]
   }).filter(Boolean) as BlockState[]
 }
-function generateMines(row: BlockState) {
+function generateMines() {
   for (const row of state.value.board) {
     for (const block of row) {
       if (Math.abs(row.x - block.x) < 1 || Math.abs(row.y - block.y) < 1)
@@ -116,7 +133,6 @@ function expendZero(block: BlockState) {
 function checkGameState() {
   if (!mineGenerated)
     return
-  console.log(123)
 
   const blocks = state.value.board.flat()
   if (blocks.every(el => el.revealed || el.flagged)) {
@@ -133,7 +149,7 @@ function checkGameState() {
   <div items-center>
     <div v-for="y, idx in state.board" :key="idx" flex justify-center>
       <template v-for="block, xidx in y" :key="xidx">
-        <button border="1 gray-400/20" hover="bg-gray/20" p-2 w-10 h-10 m-1 :class="getBlockClass(block)" @click="onClick(block)" @contextmenu.prevent="onReightClick(block)">
+        <button border="1 gray-400/20" hover="bg-gray/20" p-2 w-8 h-8 m-1 :class="getBlockClass(block)" @click="onClick(block)" @contextmenu.prevent="onReightClick(block)">
           <template v-if="block.flagged">
             <div i-mdi-flag text-red />
           </template>
@@ -151,5 +167,19 @@ function checkGameState() {
         </button>
       </template>
     </div>
+  </div>
+  <div flex justify-center mt-2>
+    <button mr-7 b-1 bg-green p-1 @click="rest">
+      RESET
+    </button>
+    <button mr-7 b-1 bg-green p-1 @click="rest('e')">
+      简单
+    </button>
+    <button mr-7 b-1 bg-green p-1 @click="rest('n')">
+      难
+    </button>
+    <button mr-7 b-1 bg-green p-1 @click="rest('tn')">
+      困难
+    </button>
   </div>
 </template>
