@@ -4,6 +4,8 @@ const { t } = useI18n()
 const state = ref()
 const width = ref(10)
 const height = ref(10)
+const mineGenerated = ref<boolean>(false)
+const dev: boolean = ref(false)
 function rest(type?: string) {
   state.value = {
     mineGenerated: false,
@@ -32,6 +34,7 @@ function rest(type?: string) {
     width.value = 15
     height.value = 15
   }
+  mineGenerated.value = false
 }
 rest()
 const descriptions = [
@@ -44,17 +47,16 @@ const descriptions = [
   [-1, 1],
   [0, 1],
 ]
-let mineGenerated: Boolean = false
-const dev: Boolean = ref(false)
+
 function onReightClick(block: BlockState): void {
   if (!block.revealed)
     block.flagged = !block.flagged
 }
 watch(state, checkGameState, { deep: true })
 function onClick(block: BlockState) {
-  if (!mineGenerated) {
+  if (!mineGenerated.value) {
     generateMines(block)
-    mineGenerated = true
+    mineGenerated.value = true
   }
   if (block.mine) {
     alert('over!')
@@ -131,7 +133,7 @@ function expendZero(block: BlockState) {
   })
 }
 function checkGameState() {
-  if (!mineGenerated)
+  if (!mineGenerated.value)
     return
 
   const blocks = state.value.board.flat()
