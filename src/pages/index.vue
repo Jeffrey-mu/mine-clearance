@@ -7,6 +7,19 @@ const height = ref(10)
 const mineGenerated = ref<boolean>(false)
 const dev: boolean = ref(false)
 function rest(type?: string) {
+  mineGenerated.value = false
+  if (type === 'e') {
+    width.value = 6
+    height.value = 6
+  }
+  else if (type === 'n') {
+    width.value = 10
+    height.value = 10
+  }
+  else if (type === 'tn') {
+    width.value = 15
+    height.value = 15
+  }
   state.value = {
     mineGenerated: false,
     status: 'ready',
@@ -22,19 +35,6 @@ function rest(type?: string) {
       ),
     ),
   }
-  if (type === 'e') {
-    width.value = 6
-    height.value = 6
-  }
-  else if (type === 'n') {
-    width.value = 10
-    height.value = 10
-  }
-  else if (type === 'tn') {
-    width.value = 15
-    height.value = 15
-  }
-  mineGenerated.value = false
 }
 rest()
 const descriptions = [
